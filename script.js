@@ -34,8 +34,6 @@ imgElement.onload = function() {
 
     const count = new Array(360).fill(0);
 
-    const histogramPos = new Array(360).fill([0, 0]);
-
     // percorre todos os pixels da imagem
     for (let x = 0; x < cols; x++) {
       for (let y = 0; y < rows; y++) {
@@ -59,7 +57,7 @@ imgElement.onload = function() {
     }
 
     // encontra o ângulo com a maior intensidade média
-    function findMaxIntensityAngle(histogram, count, histogramPos, image) {
+    function findMaxIntensityAngle(histogram, count, image) {
       let maxIntensity = 0;
       let maxX, maxY;
       let maxIndex = 0;
@@ -89,7 +87,7 @@ imgElement.onload = function() {
       cv.imshow('canvasOutput', image);
     }
 
-    findMaxIntensityAngle(histogram, count, histogramPos, image);
+    findMaxIntensityAngle(histogram, count, image);
 
     grayImg.delete();
     srcMat.delete();
