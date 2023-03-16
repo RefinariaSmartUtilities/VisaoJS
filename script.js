@@ -44,16 +44,16 @@ imgElement.onload = function() {
 
         // verifica se o ponto está dentro do círculo
         if (hypotenuse <= radius) {
+
           // calcula o ângulo do ponto atual em relação ao centro da imagem
-          let angle = Math.atan2(y, x) * 180 / Math.PI;
-          //let angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
+          let angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
           angle = angle < 0 ? angle + 360 : angle;
 
           // adiciona a intensidade do pixel atual ao histograma para o ângulo correspondente
           let pixel = image.ucharAt(y, x);
           histogram[Math.round(angle)] += (255 - pixel);
           count[Math.round(angle)]++;
-          //histogramPos[Math.round(angle)] = [x, y];
+
         }
       }
     }
@@ -70,11 +70,9 @@ imgElement.onload = function() {
           if (intensity > maxIntensity) {
             maxIntensity = intensity;
             maxIndex = i;
-            //maxX = histogramPos[i][0];
-           // maxY = histogramPos[i][1];
 
-            maxX = centerX + radius * Math.cos((count[i] * Math.PI / 180));
-            maxY = centerY + radius * Math.sin((count[i] * Math.PI / 180));
+            maxX = centerX + radius * Math.cos((maxIndex * Math.PI / 180));
+            maxY = centerY + radius * Math.sin((maxIndex * Math.PI / 180));
           }
         }
       }
