@@ -1,13 +1,17 @@
+// seleciona o elemento de imagem
 let imgElement = document.getElementById('imageSrc');
 let inputElement = document.getElementById('fileInput');
 inputElement.addEventListener('change', (e) => {
   imgElement.src = URL.createObjectURL(e.target.files[0]);
 }, false);
+
 imgElement.onload = function() {
   let srcMat = cv.imread(imgElement);
   let grayImg = new cv.Mat();
   cv.cvtColor(srcMat, grayImg, cv.COLOR_RGBA2GRAY, 0);
-  
+
+  cv.GaussianBlur(grayImg, grayImg, { width: 3, height: 3 }, 0, 0, cv.BORDER_DEFAULT);
+
   // função para calcular a hipotenusa de um ponto (x, y)
   function calcHypotenuse(x, y) {
     return Math.sqrt(x*x + y*y);
@@ -28,86 +32,70 @@ imgElement.onload = function() {
     // cria um histograma para armazenar a intensidade dos pixels para cada ângulo
     const histogram = new Array(360).fill(0);
 
-    const count = new Array(360).fill(0)
+    const count = new Array(360).fill(0);
 
-    const histogramPos = new Array(360).fill(0);
-    
+    const histogramPos = new Array(360).fill([0, 0]);
 
     // percorre todos os pixels da imagem
     for (let x = 0; x < cols; x++) {
       for (let y = 0; y < rows; y++) {
         // calcula a hipotenusa do ponto atual
         const hypotenuse = calcHypotenuse(x - centerX, y - centerY);
-        
-        let aux = [];
 
         // verifica se o ponto está dentro do círculo
         if (hypotenuse <= radius) {
           // calcula o ângulo do ponto atual em relação ao centro da imagem
-          let angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
-          angle = Math.trunc(angle)
-
-          if (angle < 0){
-                angle = angle + 360
-            }
-
-          //console.log('angle: ', angle)
+          let angle = Math.atan2(y, x) * 180 / Math.PI;
+          //let angle = Math.atan2(y - centerY, x - centerX) * 180 / Math.PI;
+          angle = angle < 0 ? angle + 360 : angle;
 
           // adiciona a intensidade do pixel atual ao histograma para o ângulo correspondente
-          let pixel = image.ucharAt(x, y);
-          //console.log('pixel: ',pixel)
-
-          aux.push(x)
-          aux.push(y)
-          //console.log('aux: ',aux)
-
-          histogram[angle] += (255 - pixel)
-          //histogram[angle] = (pixel)
-
-          count[angle]++;
-
-          histogramPos[angle] = aux
-
-          
+          let pixel = image.ucharAt(y, x);
+          histogram[Math.round(angle)] += (255 - pixel);
+          count[Math.round(angle)]++;
+          //histogramPos[Math.round(angle)] = [x, y];
         }
       }
     }
 
-    
     // encontra o ângulo com a maior intensidade média
+    function findMaxIntensityAngle(histogram, count, histogramPos, image) {
       let maxIntensity = 0;
       let maxX, maxY;
-      let pos = 0
+      let maxIndex = 0;
 
       for (let i = 0; i < histogram.length; i++) {
-        //console.log('I: ',histogram[i]);
-        if (histogram[i]/count[i] > maxIntensity) {
-          console.log('histogram I: ', histogram[i])
+        if (count[i] > 0) {
+          let intensity = histogram[i] / count[i];
+          if (intensity > maxIntensity) {
+            maxIntensity = intensity;
+            maxIndex = i;
+            //maxX = histogramPos[i][0];
+           // maxY = histogramPos[i][1];
 
-          maxIntensity = histogram[i]/count[i];
-          console.log('itensidade: ', maxIntensity)
-
-          maxIndex = i
-          console.log('maxIndex: ', i)
-
-          maxX = histogramPos[i][0]
-          maxY = histogramPos[i][1]
+            maxX = centerX + radius * Math.cos((count[i] * Math.PI / 180));
+            maxY = centerY + radius * Math.sin((count[i] * Math.PI / 180));
+          }
         }
       }
-        
-        
-      // encontra o ponto mais distante
-      maxPoint = { x: maxX, y: maxY };
-      console.log('Ponto mais distante: ', maxPoint);
-      //let center = new cv.Point(159, 169); //Image 01
-      let center = new cv.Point(155, 159); //Image 02
-      cv.line(image, center, maxPoint, [0, 0, 255, 255], 2);
-      return maxPoint;
-  }
-  /////////////////////
-  main(grayImg)
-  cv.imshow('canvasOutput', grayImg);
 
-  grayImg.delete();
-  srcMat.delete();
+      // desenha a linha indicando o ângulo com a maior intensidade média
+      let x1 = centerX;
+      let y1 = centerY;
+      let x2 = maxX;
+      let y2 = maxY;
+
+      cv.line(image, new cv.Point(x1, y1), new cv.Point(x2, y2), [255, 0, 0, 255], 2);
+
+      // atualiza a imagem exibida
+      cv.imshow('canvasOutput', image);
+    }
+
+    findMaxIntensityAngle(histogram, count, histogramPos, image);
+
+    grayImg.delete();
+    srcMat.delete();
+  }
+
+  main(grayImg);
 };
